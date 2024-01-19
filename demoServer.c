@@ -93,16 +93,12 @@ int main()
     while (1)
     {
         readBytes = read(acceptfd, buffer, sizeof(buffer) - 1);
-        if (readBytes < 0)
+        if (readBytes <= 0)
         {
+            /* 出错或通信结束都关闭此通信句柄 */
             perror("read error");
-            close(socketfd);
             close(acceptfd);
-            exit(-1);
-        }
-        else if (readBytes == 0)
-        {
-            /* todo.... */
+            break;
         }
         else
         {
@@ -115,7 +111,6 @@ int main()
         }
     }
 
-    close(acceptfd);
     close(socketfd);
 
     return 0;
