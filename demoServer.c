@@ -15,27 +15,26 @@
 #define SERVER_PORT 5555
 #define BUFFER_SIZE 128
 
-int signalHandler(int sigNum)
-{
-    int ret = 0;
-    /* 回收资源 todo.... */
+// void signalHandler(int sigNum)
+// {
+//     int ret = 0;
+//     /* 回收资源 todo.... */
 
-    return ret;
-}
+// }
 
 int main()
 {
-    /* 捕捉信号 */
-    signal(SIGINT, signalHandler);
-    signal(SIGQUIT, signalHandler);
-    signal(SIGTSTP, signalHandler);
+    // /* 捕捉信号 */
+    // signal(SIGINT, signalHandler);
+    // signal(SIGQUIT, signalHandler);
+    // signal(SIGTSTP, signalHandler);
 
     /* 创建套接字 */
     int socketfd = socket(AF_INET, SOCK_STREAM, 0);
     if (socketfd == -1)
     {
         perror("socket error");
-        _exit(-1);
+        exit(-1);
     }
 
     struct sockaddr_in localAddr;
@@ -44,7 +43,7 @@ int main()
     localAddr.sin_family = AF_INET;
     /* 转成大端 */
     localAddr.sin_port = htons(SERVER_PORT);
-    localAddr.sin_addr.s_addr = INADDR_ANY;
+    localAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
     /* 不用默认地址 */
 #if 0
@@ -59,7 +58,7 @@ int main()
     {
         perror("bind error");
         close(socketfd);
-        _exit(-1);
+        exit(-1);
     }
 
     /* 监听 */
@@ -68,24 +67,29 @@ int main()
     {
         perror("listen error");
         close(socketfd);
-        _exit(-1);
+        exit(-1);
     }
 
     struct sockaddr_in clientAddr;
     memset(&clientAddr, 0, sizeof(clientAddr));
+    
     socklen_t clientAddrLen = 0;
     
     int acceptfd = accept(socketfd, (struct sockaddr *)&clientAddr, &clientAddrLen);
-    if (accept == -1)
+    if (acceptfd == -1)
     {
         perror("listen error");
         close(socketfd);
-        _exit(-1);
+        exit(-1);
     }
 
     char buffer[BUFFER_SIZE];
     memset(buffer, 0, sizeof(buffer));
     int readBytes = 0;
+
+    char repalybuffer[BUFFER_SIZE];
+    memset(repalybuffer, 0, sizeof(repalybuffer));
+
     while (1)
     {
         readBytes = read(acceptfd, buffer, sizeof(buffer) - 1);
@@ -93,6 +97,7 @@ int main()
         {
             perror("read error");
             close(socketfd);
+            close(acceptfd);
             exit(-1);
         }
         else if (readBytes == 0)
@@ -105,7 +110,8 @@ int main()
             printf("buffer : %s\n", buffer);
             sleep(3);
 
-            write(acceptfd, "666", strlen("666") + 1);
+            strncpy(repalybuffer, "一起加油", sizeof(repalybuffer) - 1);
+            write(acceptfd, repalybuffer, strlen(repalybuffer));
         }
     }
 
