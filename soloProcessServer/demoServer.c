@@ -52,8 +52,17 @@ int main()
 
     int localAddrLen = sizeof(localAddr);
 
+    int enableOpt = 1;
+    int ret = setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, (void *) &enableOpt, sizeof(enableOpt));
+    if (ret == -1)
+    {
+        perror("setsockopt error");
+        close(socketfd);
+        exit(-1);
+    }
+
     /* 绑定 */
-    int ret = bind(socketfd, (struct sockaddr *) &localAddr, localAddrLen);
+    ret = bind(socketfd, (struct sockaddr *) &localAddr, localAddrLen);
     if (ret == -1)
     {
         perror("bind error");
