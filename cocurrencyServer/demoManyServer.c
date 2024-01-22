@@ -10,11 +10,16 @@
 #include <unistd.h>
 #include <signal.h>
 #include <pthread.h>
+#include "threadPool.h"
 
 #define MAX_LISTEN  128
 #define LOCAL_IPADDRESS "172.30.149.120"
 #define SERVER_PORT 5555
 #define BUFFER_SIZE 128
+
+#define MIN_THREADNUMS  5
+#define MAX_THREADNUMS  10
+#define MAX_QUEUE       10
 
 // void signalHandler(int sigNum)
 // {
@@ -56,7 +61,7 @@ void * threadHandleFunc(void * arg)
         {
             /* 读到的字符串 */
             printf("buffer : %s\n", recvBuffer);
-            sleep(3);
+            sleep(2);
 
             strncpy(sendBuffer, "一起加油", sizeof(sendBuffer) - 1);
             write(acceptfd, sendBuffer, strlen(sendBuffer));
@@ -73,6 +78,10 @@ int main()
     // signal(SIGINT, signalHandler);
     // signal(SIGQUIT, signalHandler);
     // signal(SIGTSTP, signalHandler);
+
+    /* 初始化线程池 */
+    threadPool pool;
+    threadPoolInit(&pool, MIN_THREADNUMS, MAX_THREADNUMS, MAX_QUEUE);
 
     /* 创建套接字 */
     int socketfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -143,6 +152,10 @@ int main()
             exit(-1);
         }
 
+        /* 像线程池中添加任务到线程池的任务队列 */
+        taskQueueInsert(&pool, threadHandleFunc, &clientAddrLen);
+
+#if 0
         /* 通信：多线程 */
         pthread_t tid;
         ret = pthread_create(&tid, NULL, threadHandleFunc, (void *)&acceptfd);
@@ -153,13 +166,13 @@ int main()
             close(socketfd);
             exit(1);
         }
-
+#endif
         
     }
     
-
+    /* 销毁线程池 */
+    threadPoolDestroy(&pool);
     
-
     close(socketfd);
 
     return 0;
