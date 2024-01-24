@@ -52,9 +52,10 @@ int main()
     }
 
     
-    fd_set readSet;
+    fd_set readSet, copySet;
     /* 清空集合 */
     FD_ZERO(&readSet);
+    bzero(&copySet, sizeof(copySet));
     
     /* 把监听的文件描述符添加到读集合中，让内核帮忙检测 */
     FD_SET(sockfd, &readSet);
@@ -74,7 +75,9 @@ int main()
 
     while (1)
     {
-        ret = select(maxfd + 1, &readSet, NULL, NULL, NULL);
+        /* 备份读集合 */
+        copySet = readSet;
+        ret = select(maxfd + 1, &copySet, NULL, NULL, NULL);
         if (ret == -1)
         {
             perror("select error");
@@ -86,7 +89,7 @@ int main()
             /* 超时 */
         }
 #endif
-        if (FD_ISSET(sockfd, &readSet))
+        if (FD_ISSET(sockfd, &copySet))
         {
             int acceptFd = accept(sockfd, (struct sockaddr *)&clientAddress, &clientAddressLen);
             if (acceptFd == -1)
@@ -104,7 +107,7 @@ int main()
 
         for (int idx = 3; idx <= maxfd; idx++)
         {
-            if (idx != sockfd && FD_ISSET(idx, &readSet))
+            if (idx != sockfd && FD_ISSET(idx, &copySet))
             {
                 /* 此时一定有客户端要求通信 */
                 ssize_t readBytes = read(idx, &buffer, sizeof(buffer));
